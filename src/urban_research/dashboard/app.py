@@ -12,6 +12,7 @@ import streamlit as st
 # ---------------------------------------------------------------------------
 
 DB_PATH = Path(__file__).resolve().parents[3] / "data" / "urban_research.db"
+LOGO_PATH = Path(__file__).resolve().parent / "logo.svg"
 
 
 @st.cache_resource
@@ -59,10 +60,12 @@ all_metrics = sorted(df_all["metric"].unique())
 all_years = sorted(df_all["year"].unique())
 
 # ---------------------------------------------------------------------------
-# Sidebar filters
+# Sidebar: logo + filters
 # ---------------------------------------------------------------------------
 
-st.sidebar.title("Filters")
+st.sidebar.image(str(LOGO_PATH), use_container_width=True)
+st.sidebar.divider()
+st.sidebar.subheader("Filters")
 
 geo_type_options = {"All": None, "Metro Areas": "metro", "Cities": "city"}
 geo_type_label = st.sidebar.radio("Geography type", list(geo_type_options.keys()), index=0)
@@ -144,7 +147,7 @@ def fmt_value(val: float, metric: str) -> str:
 # Header metrics
 # ---------------------------------------------------------------------------
 
-st.title("Urban Research Dashboard")
+st.image(str(LOGO_PATH), width=360)
 
 n_geos = df["geo_id"].nunique()
 df_pop_growth = df[(df["metric"] == "population_change_pct") & (df["year"] == latest_year)]

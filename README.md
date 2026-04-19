@@ -248,3 +248,7 @@ Census and BLS data has a release lag:
 | BLS LAUS (unemployment rate) | Through Dec 2025 | Monthly |
 
 Re-run `fetch` periodically to pick up new releases.
+
+---
+
+Built with [Claude Code](https://claude.ai/claude-code) (Claude Opus 4.6).
