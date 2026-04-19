@@ -1,197 +1,147 @@
-# Urban Research
+<p align="center">
+  <img src="src/urban_research/dashboard/logo.svg" alt="Urban Research" width="420">
+</p>
 
-A data pipeline and dashboard for real estate investment research. Pulls public data about US metro areas and cities — population growth, employment, wages, unemployment — and stores it locally for analysis.
+<p align="center">
+  <strong>Find your next real estate market in minutes, not months.</strong>
+</p>
 
-## Setup
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.13+-3776ab?logo=python&logoColor=white" alt="Python 3.13+">
+  <img src="https://img.shields.io/badge/data-Census%20%7C%20BLS-1e3a5f" alt="Data Sources">
+  <img src="https://img.shields.io/badge/storage-SQLite-003b57?logo=sqlite&logoColor=white" alt="SQLite">
+  <img src="https://img.shields.io/badge/dashboard-Streamlit-ff4b4b?logo=streamlit&logoColor=white" alt="Streamlit">
+</p>
+
+---
+
+Urban Research is an open-source data pipeline and interactive dashboard that pulls public government data about every major US metro and city — population growth, job growth, wages, unemployment — and lets you explore it all locally. No subscriptions, no paywalls, no stale spreadsheets.
+
+## What You Get
+
+**370+ metros and cities** with 200k+ population, each tracked across **9 metrics** over **5 years** (2020–2024):
+
+| Category | Metrics | Source |
+|---|---|---|
+| Population | Total population, YoY change, growth % | US Census Bureau (PEP + ACS) |
+| Employment | Total jobs, YoY change, job growth % | Bureau of Labor Statistics (QCEW) |
+| Wages | Average annual pay, average weekly wage | Bureau of Labor Statistics (QCEW) |
+| Unemployment | Annual average unemployment rate | Bureau of Labor Statistics (LAUS) |
+
+All data is **free, public domain**, pulled directly from federal APIs — no scraping, no third-party dependencies.
+
+## Quick Start
 
 Requires Python 3.13+ and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-# Clone and install
-cd urban_research
+git clone https://github.com/kkarbasi/urban-research.git
+cd urban-research
 uv sync
 
-# Generate default config (optional — works without it)
-uv run urban-research init-config
-```
-
-## Quick Start
-
-```bash
-# 1. Fetch population data (metros + cities with 200k+ population)
+# Pull all data (~30 seconds)
 uv run urban-research fetch census_population
-
-# 2. Fetch employment and wage data
 uv run urban-research fetch bls_employment --skip-laus
 
-# 3. Launch the dashboard
+# Launch the dashboard
 uv run urban-research dashboard
-# Open http://localhost:8501
 ```
 
-## CLI Reference
+Open **http://localhost:8501** and start exploring.
 
-All commands support `--help` for details. Global options go **before** the command name.
+## Dashboard
 
-### Global Options
+Four tabs designed for real estate research:
 
-| Flag | Description |
-|---|---|
-| `-v`, `--verbose` | Enable debug logging |
-| `-c`, `--config PATH` | Path to config YAML (default: `config/settings.yaml`) |
+- **Rankings** — Rank metros by population growth, job growth, unemployment, or average pay. Horizontal bar chart + full sortable table.
+- **Trends** — Compare up to 15 metros side-by-side with line charts. Population, employment, wages, cumulative growth.
+- **City Profile** — Deep dive into a single metro: every metric charted over time in one view.
+- **Data Explorer** — Full data table with filters. Download any slice as CSV.
 
-### `fetch` — Pull data from sources
-
-```bash
-uv run urban-research fetch <source_id> [OPTIONS]
-uv run urban-research fetch --all [OPTIONS]
-```
-
-| Argument / Flag | Description |
-|---|---|
-| `source_id` | Which source to fetch (see `sources` command) |
-| `--all` | Fetch from all registered sources |
-| `--vintage YEAR` | Override data vintage year (Census only) |
-| `--min-pop N` | Override minimum population filter (default: 200,000) |
-| `--skip-laus` | Skip BLS LAUS unemployment rate fetch (avoids API rate limit) |
-
-**Examples:**
+## CLI
 
 ```bash
-# Fetch just population data
-uv run urban-research fetch census_population
-
-# Fetch employment + wages (skip unemployment rate to avoid BLS API limit)
-uv run urban-research fetch bls_employment --skip-laus
-
-# Fetch everything, include cities down to 100k
-uv run urban-research fetch --all --min-pop 100000
-
-# Fetch with verbose logging to debug API issues
-uv run urban-research -v fetch census_population
-```
-
-### `sources` — List available data sources
-
-```bash
-uv run urban-research sources
-```
-
-Current sources:
-
-| ID | What it fetches | Data from |
-|---|---|---|
-| `census_population` | Population, population change, growth % for metros and cities | Census PEP + ACS |
-| `bls_employment` | Employment, job growth, avg pay, avg weekly wage, unemployment rate | BLS QCEW + LAUS |
-
-### `query` — Query stored data from the terminal
-
-```bash
-uv run urban-research query [OPTIONS]
-```
-
-| Flag | Description |
-|---|---|
-| `-m`, `--metric NAME` | Filter by metric (e.g. `population_change_pct`, `employment`) |
-| `-g`, `--geo-type TYPE` | Filter by geography type (`metro` or `city`) |
-| `-y`, `--year YEAR` | Filter by year |
-| `--min-pop N` | Minimum population |
-| `-n`, `--top N` | Number of rows to show (default: 20) |
-
-**Examples:**
-
-```bash
-# Top 20 metros by population growth in 2024
+# Top 20 fastest-growing metros
 uv run urban-research query -m population_change_pct -g metro -y 2024
 
-# Top 10 metros by job growth
+# Top 10 by job growth
 uv run urban-research query -m employment_change_pct -g metro -y 2024 -n 10
 
-# Cities with highest average pay
-uv run urban-research query -m avg_annual_pay -g metro -y 2024 -n 15
+# Highest-paying metros
+uv run urban-research query -m avg_annual_pay -y 2024 -n 15
 
-# All data for metros with 500k+ population
-uv run urban-research query -g metro --min-pop 500000
-```
-
-### `status` — Show what data has been fetched
-
-```bash
+# What data do I have?
 uv run urban-research status
 ```
 
-Shows each source, metric, record count, year range, and last fetch time.
+## All Commands
 
-### `dashboard` — Launch the web dashboard
+| Command | What it does |
+|---|---|
+| `fetch <source>` | Pull data from a source (`census_population`, `bls_employment`) |
+| `fetch --all` | Pull from all sources |
+| `query` | Query stored data with filters (`-m`, `-g`, `-y`, `--min-pop`, `-n`) |
+| `sources` | List registered data sources |
+| `status` | Show fetched data summary |
+| `dashboard` | Launch Streamlit dashboard (default port 8501) |
+| `init-config` | Generate default `config/settings.yaml` |
 
-```bash
-uv run urban-research dashboard [OPTIONS]
-```
+Global flags: `-v` (verbose logging), `-c PATH` (custom config file).
+
+## Fetch Options
 
 | Flag | Description |
 |---|---|
-| `-p`, `--port N` | Port number (default: 8501) |
-
-Opens a Streamlit dashboard at `http://localhost:8501` with four tabs:
-
-- **Rankings** — Bar chart + table, rank metros by population growth, job growth, unemployment rate, or average pay
-- **Trends** — Line charts comparing up to 15 metros across any metric over time
-- **City Profile** — Deep dive into a single metro with all metrics charted
-- **Data Explorer** — Full data table with metric/source filters and CSV download
-
-### `init-config` — Generate a default config file
-
-```bash
-uv run urban-research init-config [--path PATH]
-```
-
-## Available Metrics
-
-| Metric | Source | Description |
-|---|---|---|
-| `population` | Census PEP/ACS | Total population |
-| `population_change` | Census PEP/ACS | Year-over-year population change |
-| `population_change_pct` | Census PEP/ACS | Year-over-year population growth % |
-| `employment` | BLS QCEW | Total nonfarm employment (jobs) |
-| `employment_change` | BLS QCEW | Year-over-year job change |
-| `employment_change_pct` | BLS QCEW | Year-over-year job growth % |
-| `avg_annual_pay` | BLS QCEW | Average annual pay ($) |
-| `avg_weekly_wage` | BLS QCEW | Average weekly wage ($) |
-| `unemployment_rate` | BLS LAUS | Annual avg unemployment rate (%) |
+| `--vintage YEAR` | Override Census data vintage year |
+| `--min-pop N` | Override population filter (default: 200,000) |
+| `--skip-laus` | Skip unemployment rate (avoids BLS API daily limit) |
 
 ## Configuration
 
-Edit `config/settings.yaml`:
+Optional. Works out of the box with no config. For higher API limits:
 
 ```yaml
+# config/settings.yaml
 census:
-  # Free key at https://api.census.gov/data/key_signup.html
-  # Works without one (500 req/day), key removes limits.
-  api_key: null
-
+  api_key: null    # Free: https://api.census.gov/data/key_signup.html
 bls:
-  # Free key at https://data.bls.gov/registrationEngine/
-  # Only needed for LAUS unemployment data (increases limit from 25 to 500 req/day).
-  api_key: null
-
+  api_key: null    # Free: https://data.bls.gov/registrationEngine/
 storage:
   db_path: data/urban_research.db
-
 pipeline:
   min_population: 200000
-  default_vintage: null  # null = auto-detect latest
 ```
 
-## Data Storage
+## Architecture
 
-All data is stored locally in a SQLite database at `data/urban_research.db`. Two tables:
+```
+Census API ──┐                  ┌── CLI (query, status)
+             ├── Pipeline ── SQLite DB ──┤
+BLS QCEW  ──┘    (fetch)       └── Streamlit Dashboard
+```
 
-- **`geographies`** — one row per metro/city (ID, name, type, population)
-- **`data_points`** — one row per metric per year per geography
+The framework is designed to be extended. Each data source is a self-contained Python class:
 
-Re-running `fetch` upserts (updates existing records, inserts new ones) — safe to re-run anytime.
+```python
+from urban_research.core.registry import SourceRegistry
+from urban_research.core.source import DataSource
 
-You can also query the database directly:
+@SourceRegistry.register
+class MyNewSource(DataSource):
+    source_id = "my_source"
+    name = "My Data Source"
+    description = "What it provides"
+
+    def fetch(self, **kwargs) -> FetchResult:
+        # Fetch → transform → return FetchResult
+        ...
+```
+
+Add the import to `src/urban_research/sources/__init__.py` and it auto-registers everywhere — CLI, pipeline, dashboard.
+
+## Direct Database Access
+
+The SQLite database at `data/urban_research.db` is yours to query however you want:
 
 ```python
 import sqlite3, pandas as pd
@@ -209,45 +159,26 @@ df = pd.read_sql("""
 """, conn)
 ```
 
-## Adding New Data Sources
+## Roadmap
 
-Create a new file in `src/urban_research/sources/`, subclass `DataSource`, and register it:
+- [ ] Rent data (HUD Fair Market Rents, Zillow ZORI)
+- [ ] Home price index (FHFA HPI)
+- [ ] Crime stats (FBI Crime Data Explorer)
+- [ ] School quality (NCES)
+- [ ] Walkability scores (EPA Smart Location Database)
+- [ ] Migration flows (IRS SOI county-to-county)
+- [ ] Neighborhood-level data (Census tract)
+- [ ] Composite "investability" scoring
 
-```python
-from ..core.registry import SourceRegistry
-from ..core.source import DataSource
+See [`data_sources.md`](data_sources.md) for the full research on 50+ public data sources that can feed this project.
 
-@SourceRegistry.register
-class MyNewSource(DataSource):
-    source_id = "my_source"
-    name = "My Data Source"
-    description = "What it provides"
+## Contributing
 
-    def fetch(self, **kwargs) -> FetchResult:
-        # Fetch data, return FetchResult with geographies + data points
-        ...
-```
+Pull requests welcome. The easiest way to contribute is adding a new data source — the plugin architecture makes it straightforward. See the **Architecture** section above.
 
-Then add the import to `src/urban_research/sources/__init__.py`:
+## License
 
-```python
-from . import my_new_source  # noqa: F401
-```
-
-The new source will automatically appear in `sources`, `fetch`, and the dashboard.
-
-## Data Freshness
-
-Census and BLS data has a release lag:
-
-| Source | Latest available | Next release |
-|---|---|---|
-| Census PEP (metros) | 2023 | ~Dec 2026 |
-| Census ACS 1-year (cities) | 2024 | ~Sept 2026 |
-| BLS QCEW (employment/wages) | 2024 | ~Q3 2026 |
-| BLS LAUS (unemployment rate) | Through Dec 2025 | Monthly |
-
-Re-run `fetch` periodically to pick up new releases.
+MIT
 
 ---
 
