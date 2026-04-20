@@ -1,6 +1,6 @@
 [project]
 name = "cityscope"
-version = "0.1.1"
+version = "0.2.0"
 description = "Real estate investment research data pipeline for US metros and cities"
 readme = "README.md"
 license = "MIT"
