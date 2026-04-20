@@ -7,4 +7,6 @@ Quick start:
     df = api.to_dataframe(metric="population_change_pct", geo_type="metro", year=2024)
 """
 
-__version__ = "0.1.1"
+from importlib.metadata import version as _get_version
+
+__version__ = _get_version("cityscope")
