@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/python-3.13+-3776ab?logo=python&logoColor=white" alt="Python 3.13+">
   <img src="https://img.shields.io/badge/data-Census%20%7C%20BLS-4f46e5" alt="Data Sources">
   <img src="https://img.shields.io/badge/storage-SQLite-003b57?logo=sqlite&logoColor=white" alt="SQLite">
-  <img src="https://img.shields.io/pypi/v/cityscope?color=6366f1" alt="PyPI">
+  <img src="https://img.shields.io/pypi/v/cityscope?color=6366f1&cache=v1" alt="PyPI">
   <img src="https://img.shields.io/github/license/kkarbasi/cityscope" alt="License">
 </p>
 
