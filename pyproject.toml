@@ -1,22 +1,41 @@
 [project]
 name = "urban-research"
 version = "0.1.0"
-description = "Real estate investment research data pipeline"
+description = "Real estate investment research data pipeline for US metros and cities"
 readme = "README.md"
+license = "MIT"
 authors = [
     { name = "Kaveh Karbasi", email = "kkarbasi@berkeley.edu" }
 ]
 requires-python = ">=3.13"
+keywords = ["real-estate", "data-pipeline", "census", "bls", "urban", "research"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial :: Investment",
+]
 dependencies = [
     "click>=8.3.2",
     "httpx>=0.28.1",
     "pandas>=3.0.2",
-    "plotly>=6.7.0",
     "pydantic>=2.13.1",
     "pyyaml>=6.0.3",
     "rich>=15.0.0",
+]
+
+[project.optional-dependencies]
+dashboard = [
+    "plotly>=6.7.0",
     "streamlit>=1.56.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/kkarbasi/urban-research"
+Repository = "https://github.com/kkarbasi/urban-research"
+Issues = "https://github.com/kkarbasi/urban-research/issues"
 
 [project.scripts]
 urban-research = "urban_research.cli:cli"
