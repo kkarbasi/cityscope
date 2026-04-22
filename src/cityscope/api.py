@@ -263,7 +263,12 @@ def _build_snapshot(
     geo_type: GeoType,
     year: int | None,
 ) -> GeoLevelSnapshot | None:
-    """Build a GeoLevelSnapshot from stored data for a single geography."""
+    """Build a GeoLevelSnapshot from stored data for a single geography.
+
+    If `year` is not specified, picks the latest available year PER METRIC
+    (so metrics from different sources with different release cadences all
+    show up, each at their own most recent vintage).
+    """
     rows = storage.query_data(
         geo_type=geo_type.value,
         year=year,
@@ -274,21 +279,32 @@ def _build_snapshot(
     if not rows:
         return None
 
-    # Use the latest year if none specified, and bundle all metrics for that year
-    target_year = year if year is not None else max(r["year"] for r in rows)
-    year_rows = [r for r in rows if r["year"] == target_year]
-    if not year_rows:
-        year_rows = rows
+    if year is not None:
+        year_rows = [r for r in rows if r["year"] == year]
+        metrics = {r["metric"]: r["value"] for r in year_rows}
+        report_year = year
+    else:
+        # For each metric, keep only the row for its latest year.
+        latest_per_metric: dict[str, dict] = {}
+        for r in rows:
+            metric = r["metric"]
+            current = latest_per_metric.get(metric)
+            if current is None or r["year"] > current["year"]:
+                latest_per_metric[metric] = r
+        metrics = {m: row["value"] for m, row in latest_per_metric.items()}
+        # Report year = most recent metric's year (mostly for display)
+        report_year = max(row["year"] for row in latest_per_metric.values())
 
-    metrics = {r["metric"]: r["value"] for r in year_rows}
-    first = year_rows[0]
+    if not metrics:
+        return None
 
+    first = rows[0]
     return GeoLevelSnapshot(
         geo_id=geo_id,
         name=first["name"],
         geo_type=geo_type,
         population=first.get("population"),
-        year=first["year"],
+        year=report_year,
         metrics=metrics,
     )
 
@@ -298,7 +314,11 @@ def _try_fetch_for_geo(
     geo_id: str,
     geo_type: GeoType,
 ) -> bool:
-    """Try each registered source that supports this geo_type. Returns True if any succeeded."""
+    """Try each registered source that supports this geo_type, skipping any
+    source whose data is already in storage for this geo_id.
+
+    Returns True if any source produced new data points.
+    """
     any_success = False
     storage = _get_storage()
 
@@ -306,6 +326,12 @@ def _try_fetch_for_geo(
         source = SourceRegistry.get(source_id, config)
         if geo_type not in source.supported_geo_types_for_lookup:
             continue
+
+        # Skip if we already have data from this source for this geo_id.
+        existing = storage.query_data(source=source_id, limit=10_000)
+        if any(r["geo_id"] == geo_id for r in existing):
+            continue
+
         try:
             result = source.fetch_for_geo(geo_id, geo_type)
         except NotImplementedError:
@@ -370,6 +396,7 @@ def lookup(
         ("metro", GeoType.METRO, geo_result.cbsa_code),
         ("city", GeoType.CITY, geo_result.place_geo_id),
         ("county", GeoType.COUNTY, geo_result.county_geo_id),
+        ("tract", GeoType.TRACT, geo_result.tract_geoid),
     ]
 
     for field_name, geo_type, geo_id in levels:
@@ -379,21 +406,22 @@ def lookup(
             )
             continue
 
+        # When auto_fetch is on, try every source that supports this geo_type
+        # and hasn't yet stored data for it — this enriches partial snapshots
+        # (e.g., adding HUD FMR to a county that already has population data).
+        if auto_fetch:
+            _try_fetch_for_geo(config, geo_id, geo_type)
+
         snapshot = _build_snapshot(storage, geo_id, geo_type, year)
 
-        if snapshot is None and auto_fetch:
-            fetched = _try_fetch_for_geo(config, geo_id, geo_type)
-            if fetched:
-                snapshot = _build_snapshot(storage, geo_id, geo_type, year)
-            else:
-                report.warnings.append(
-                    f"No data available for {geo_type.value} {geo_id}"
-                )
-        elif snapshot is None:
-            report.warnings.append(
-                f"No local data for {geo_type.value} {geo_id} "
-                f"(re-run with auto_fetch=True to fetch from source)"
+        if snapshot is None:
+            msg = (
+                f"No data available for {geo_type.value} {geo_id}"
+                if auto_fetch
+                else f"No local data for {geo_type.value} {geo_id} "
+                     f"(re-run with auto_fetch=True to fetch from source)"
             )
+            report.warnings.append(msg)
 
         setattr(report, field_name, snapshot)
 

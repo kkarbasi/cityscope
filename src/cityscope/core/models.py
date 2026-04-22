@@ -80,5 +80,6 @@ class LocationReport(BaseModel):
     metro: GeoLevelSnapshot | None = None
     city: GeoLevelSnapshot | None = None
     county: GeoLevelSnapshot | None = None
+    tract: GeoLevelSnapshot | None = None
 
     warnings: list[str] = Field(default_factory=list)

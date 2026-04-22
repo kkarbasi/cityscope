@@ -72,7 +72,8 @@ class TestLookupReturnsReport:
         assert report.metro is None
         assert report.city is None
         assert report.county is None
-        assert len(report.warnings) == 3  # metro, city, county all missing
+        assert report.tract is None
+        assert len(report.warnings) == 4  # metro, city, county, tract all missing
 
     def test_report_populated_from_db(self, tmp_db, mountain_view_geocoding, sample_geographies, sample_data_points):
         """If DB has matching data, report should include it."""
