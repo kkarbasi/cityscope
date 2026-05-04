@@ -65,9 +65,12 @@ STATE_FIPS_TO_POSTAL: dict[str, str] = {
     "56": "wy", "72": "pr",
 }
 
-# Industry sector rollups, per LEHD's standard groupings.
-GOODS_INDUSTRIES = ["CNS01", "CNS02", "CNS03", "CNS04", "CNS05"]
-TRADE_INDUSTRIES = ["CNS06", "CNS07", "CNS08"]
+# Industry sector rollups, per BLS supersector convention.
+# Goods-Producing = Natural Resources & Mining + Construction + Manufacturing.
+# Trade/Transport/Utilities is its own supersector; Utilities (CNS03) lives there,
+# not in Goods (a common mistake — verified against BLS supersector definitions).
+GOODS_INDUSTRIES = ["CNS01", "CNS02", "CNS04", "CNS05"]                     # Ag, Mining, Construction, Mfg
+TRADE_INDUSTRIES = ["CNS03", "CNS06", "CNS07", "CNS08"]                     # Utilities, Wholesale, Retail, Transport/Warehousing
 SERVICES_INDUSTRIES = [
     "CNS09", "CNS10", "CNS11", "CNS12", "CNS13", "CNS14",
     "CNS15", "CNS16", "CNS17", "CNS18", "CNS19", "CNS20",

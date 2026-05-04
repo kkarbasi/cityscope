@@ -59,13 +59,17 @@ class TestShare:
 
 class TestExtractMetrics:
     def test_typical_office_district(self):
-        """Tract with lots of jobs, few residents (e.g., Googleplex)."""
-        # Industries fully accounted for so percentages sum to 100.
+        """Tract with lots of jobs, few residents (e.g., Googleplex).
+        BLS supersector convention: Utilities (CNS03) is in Trade, not Goods.
+        """
         wac = {
             "C000": 40_000, "CE03": 38_000, "CA01": 5_000,
-            "CNS01": 100, "CNS02": 0, "CNS03": 200, "CNS04": 50, "CNS05": 1_650,  # 2,000 goods
-            "CNS06": 500, "CNS07": 1_300, "CNS08": 200,                            # 2,000 trade
-            "CNS12": 32_000, "CNS09": 4_000,                                       # 36,000 services
+            # Goods (Ag + Mining + Construction + Mfg)
+            "CNS01": 200, "CNS02": 0, "CNS04": 200, "CNS05": 1_600,            # 2,000 goods
+            # Trade (Utilities + Wholesale + Retail + Transport)
+            "CNS03": 300, "CNS06": 400, "CNS07": 1_100, "CNS08": 200,           # 2,000 trade
+            # Services (CNS09–CNS20 — info, finance, professional, healthcare, …)
+            "CNS12": 32_000, "CNS09": 4_000,                                    # 36,000 services
         }
         rac = {"C000": 1_000, "CE03": 750}
 
@@ -103,7 +107,11 @@ class TestExtractMetrics:
         assert "jobs_workers_ratio" not in m
 
     def test_industry_rollup(self):
-        """Industry rollup: CNS01-05 = goods, 06-08 = trade, 09-20 = services."""
+        """Industry rollup follows BLS supersector convention:
+        - Goods = Ag (CNS01) + Mining (CNS02) + Construction (CNS04) + Mfg (CNS05)
+        - Trade/Transport/Utilities = Utilities (CNS03) + Wholesale (CNS06) + Retail (CNS07) + Transport (CNS08)
+        - Services = CNS09–CNS20
+        """
         wac = {
             "C000": 1000,
             "CNS01": 100,  # Ag (goods)
@@ -116,8 +124,25 @@ class TestExtractMetrics:
         }
         rac = {"C000": 1000, "CE03": 500}
         m = _extract_metrics(wac, rac)
-        assert m["jobs_industry_goods_pct"] == 30.0   # 300/1000
-        assert m["jobs_industry_trade_pct"] == 30.0   # 300/1000
+        assert m["jobs_industry_goods_pct"] == 30.0     # 300/1000
+        assert m["jobs_industry_trade_pct"] == 30.0     # 300/1000
+        assert m["jobs_industry_services_pct"] == 40.0  # 400/1000
+
+    def test_utilities_count_as_trade_not_goods(self):
+        """Regression: CNS03 (Utilities) must live in Trade/Transport/Utilities
+        per BLS supersector convention, not in Goods. Earlier code had this wrong.
+        """
+        wac = {
+            "C000": 1000,
+            "CNS04": 200,  # Construction → Goods
+            "CNS03": 300,  # Utilities → MUST be in Trade
+            "CNS07": 100,  # Retail → Trade
+            "CNS12": 400,  # Professional → Services
+        }
+        rac = {"C000": 1000, "CE03": 500}
+        m = _extract_metrics(wac, rac)
+        assert m["jobs_industry_goods_pct"] == 20.0   # 200/1000 (Construction only)
+        assert m["jobs_industry_trade_pct"] == 40.0   # 400/1000 (Utilities + Retail)
         assert m["jobs_industry_services_pct"] == 40.0  # 400/1000
 
 
